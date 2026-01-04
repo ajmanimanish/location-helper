@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Help – Share My Location</title>
+
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#0f766e">
+
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f0fdfa;
+      text-align: center;
+      padding: 40px 20px;
+    }
+    h1 {
+      font-size: 26px;
+      color: #065f46;
+    }
+    p {
+      font-size: 18px;
+      color: #064e3b;
+      margin-bottom: 30px;
+    }
+    button {
+      font-size: 22px;
+      padding: 20px 30px;
+      background: #0f766e;
+      color: white;
+      border: none;
+      border-radius: 12px;
+      cursor: pointer;
+    }
+    button:active {
+      background: #115e59;
+    }
+    .note {
+      margin-top: 25px;
+      font-size: 14px;
+      color: #555;
+    }
+  </style>
+</head>
+
+<body>
+  <h1>Need Help Outside?</h1>
+  <p>Press the button below to share your location with our support team.</p>
+
+  <button onclick="shareLocation()">📍 SHARE MY LOCATION</button>
+
+  <p class="note">
+    We only access your location when you press the button.
+  </p>
+
+  <script>
+    function shareLocation() {
+      if (!navigator.geolocation) {
+        alert("Location not supported on this phone.");
+        return;
+      }
+
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          const lat = position.coords.latitude;
+          const lon = position.coords.longitude;
+          const mapsLink = `https://maps.google.com/?q=${lat},${lon}`;
+
+          const message = encodeURIComponent(
+            `Hello, I need help booking a taxi.\n\nMy current location is:\n${mapsLink}`
+          );
+
+          // 🔴 REPLACE THIS NUMBER
+          const whatsappNumber = "919XXXXXXXXX";
+
+          const whatsappURL = `https://wa.me/${whatsappNumber}?text=${message}`;
+          window.location.href = whatsappURL;
+        },
+        () => {
+          alert("Unable to get location. Please try again.");
+        }
+      );
+    }
+
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('service-worker.js');
+    }
+  </script>
+</body>
+</html>
+
