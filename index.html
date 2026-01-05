@@ -110,7 +110,7 @@
       return;
     }
 
-    fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${query}`)
+   fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${query}&countrycodes=in&addressdetails=1&limit=5`)
       .then(res => res.json())
       .then(data => {
         const suggestions = document.getElementById("suggestions");
