@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Help – Share My Location</title>
+  <title>Help – Book My Taxi</title>
 
   <link rel="manifest" href="manifest.json">
   <meta name="theme-color" content="#0f766e">
@@ -13,152 +13,154 @@
       font-family: Arial, sans-serif;
       background: #f0fdfa;
       text-align: center;
-      padding: 40px 20px;
+      padding: 30px 15px;
     }
+
     h1 {
-      font-size: 26px;
       color: #065f46;
+      font-size: 26px;
     }
+
     p {
       font-size: 18px;
       color: #064e3b;
-      margin-bottom: 20px;
     }
+
     button {
-      font-size: 22px;
-      padding: 18px 26px;
+      font-size: 20px;
+      padding: 18px 24px;
       background: #0f766e;
       color: white;
       border: none;
       border-radius: 12px;
       cursor: pointer;
-      width: 90%;
-      max-width: 320px;
+      margin-top: 15px;
+      width: 100%;
+      max-width: 400px;
     }
-    button:active {
-      background: #115e59;
-    }
+
     input {
-      font-size: 20px;
-      padding: 14px;
-      width: 90%;
-      max-width: 320px;
-      border-radius: 10px;
-      border: 1px solid #ccc;
+      font-size: 18px;
+      padding: 12px;
+      width: 100%;
+      max-width: 400px;
       margin-top: 15px;
     }
+
+    ul {
+      list-style: none;
+      padding: 0;
+      margin: 10px auto;
+      max-width: 400px;
+      text-align: left;
+      background: white;
+      border-radius: 8px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+    }
+
+    li {
+      padding: 10px;
+      border-bottom: 1px solid #eee;
+      cursor: pointer;
+      font-size: 16px;
+    }
+
+    li:hover {
+      background: #f0fdfa;
+    }
+
     .note {
-      margin-top: 25px;
       font-size: 14px;
+      margin-top: 20px;
       color: #555;
     }
   </style>
 </head>
 
 <body>
+  <h1>Need a Taxi?</h1>
+  <p>We will help you book a taxi.</p>
 
-  <h1>Need Help Outside?</h1>
-  <p>Press the button below to share your location.</p>
+  <input
+    id="destinationInput"
+    type="text"
+    placeholder="Type destination (hospital, home, etc.)"
+    oninput="searchAddress()"
+  />
+
+  <ul id="suggestions"></ul>
 
   <button onclick="shareLocation()">📍 SHARE MY LOCATION</button>
 
-  <!-- Destination selection -->
-  <div id="destinationBox" style="display:none; margin-top:30px;">
-    <p>Where do you want to go?</p>
-
-    <button onclick="sendWithDestination('Hospital')">🏥 Hospital</button><br><br>
-    <button onclick="sendWithDestination('Home')">🏠 Home</button><br><br>
-    <button onclick="sendWithDestination('Airport')">✈️ Airport</button><br><br>
-
-    <button onclick="showOtherDestination()">📍 Other destination</button>
-  </div>
-
-  <!-- Google Autocomplete input -->
-  <div id="otherBox" style="display:none; margin-top:25px;">
-    <p>Type destination address</p>
-    <input
-      type="text"
-      id="destinationInput"
-      placeholder="House no, street, area, city"
-    >
-    <br><br>
-    <button onclick="sendOtherDestination()">Send</button>
-  </div>
-
   <p class="note">
-    We only access your location when you press the button.
+    Location is shared only when you press the button.
   </p>
 
-  <script>
-    let currentMapsLink = "";
-    let selectedAddress = "";
+<script>
+  let selectedDestination = "";
 
-    function shareLocation() {
-      if (!navigator.geolocation) {
-        alert("Location not supported.");
-        return;
+  async function searchAddress() {
+    const query = document.getElementById("destinationInput").value;
+    const suggestions = document.getElementById("suggestions");
+
+    if (query.length < 3) {
+      suggestions.innerHTML = "";
+      return;
+    }
+
+    const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&addressdetails=1&limit=5&countrycodes=in`;
+
+    const response = await fetch(url, {
+      headers: {
+        "Accept": "application/json"
       }
+    });
 
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          const lat = position.coords.latitude;
-          const lon = position.coords.longitude;
-          currentMapsLink = `https://maps.google.com/?q=${lat},${lon}`;
-          document.getElementById("destinationBox").style.display = "block";
-        },
-        () => alert("Unable to get location.")
-      );
+    const results = await response.json();
+    suggestions.innerHTML = "";
+
+    results.forEach(place => {
+      const li = document.createElement("li");
+      li.textContent = place.display_name;
+      li.onclick = () => {
+        selectedDestination = place.display_name;
+        document.getElementById("destinationInput").value = place.display_name;
+        suggestions.innerHTML = "";
+      };
+      suggestions.appendChild(li);
+    });
+  }
+
+  function shareLocation() {
+    if (!navigator.geolocation) {
+      alert("Location not supported on this phone.");
+      return;
     }
 
-    function sendWithDestination(destination) {
-      const message = encodeURIComponent(
-        `Hello, I need help booking a taxi.\n\nPickup location:\n${currentMapsLink}\n\nDestination:\n${destination}`
-      );
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        const lat = position.coords.latitude;
+        const lon = position.coords.longitude;
+        const mapsLink = `https://maps.google.com/?q=${lat},${lon}`;
 
-      const whatsappNumber = "917828893403";
-      window.location.href = `https://wa.me/${whatsappNumber}?text=${message}`;
-    }
+        const message = encodeURIComponent(
+          `Hello, I need help booking a taxi.\n\n` +
+          `📍 My current location:\n${mapsLink}\n\n` +
+          `🎯 Destination:\n${selectedDestination || "Not specified"}`
+        );
 
-    function showOtherDestination() {
-      document.getElementById("otherBox").style.display = "block";
-    }
-
-    function sendOtherDestination() {
-      const input = document.getElementById("destinationInput").value.trim();
-      if (!input) {
-        alert("Please enter destination.");
-        return;
+        const whatsappNumber = "917828893403"; // your number
+        window.location.href = `https://wa.me/${whatsappNumber}?text=${message}`;
+      },
+      () => {
+        alert("Unable to get location. Please try again.");
       }
-      sendWithDestination(input);
-    }
+    );
+  }
 
-    // Google Places Autocomplete
-    function initAutocomplete() {
-      const input = document.getElementById("destinationInput");
-      const autocomplete = new google.maps.places.Autocomplete(input, {
-        types: ["geocode"],
-      });
-
-      autocomplete.addListener("place_changed", () => {
-        const place = autocomplete.getPlace();
-        if (place.formatted_address) {
-          input.value = place.formatted_address;
-        }
-      });
-    }
-
-    if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('service-worker.js');
-    }
-  </script>
-
-  <!-- Google Maps API -->
-  <script
-    src="https://maps.googleapis.com/maps/api/js?key=AIzaSyD6ZxieC6Q2sx963MS_voRTTJkZ1ooyeZU&libraries=places&callback=initAutocomplete"
-    async
-    defer
-  ></script>
-
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('service-worker.js');
+  }
+</script>
 </body>
 </html>
-
