@@ -21,9 +21,8 @@
 
     label {
       font-weight: bold;
-      display: block;
       margin-top: 15px;
-      margin-bottom: 5px;
+      display: block;
     }
 
     input {
@@ -32,6 +31,7 @@
       font-size: 16px;
       border-radius: 8px;
       border: 1px solid #ccc;
+      margin-top: 5px;
     }
 
     button {
@@ -46,8 +46,21 @@
       cursor: pointer;
     }
 
-    button:active {
-      background: #115e59;
+    .suggestions {
+      background: white;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      max-height: 150px;
+      overflow-y: auto;
+    }
+
+    .suggestion-item {
+      padding: 10px;
+      cursor: pointer;
+    }
+
+    .suggestion-item:hover {
+      background: #e6fffa;
     }
 
     .note {
@@ -63,56 +76,89 @@
 
   <h1>🚖 Book a Taxi</h1>
 
-  <!-- DESTINATION (MANDATORY) -->
-  <label for="destination">Destination (required)</label>
+  <!-- DESTINATION -->
+  <label>Destination (required)</label>
   <input
     type="text"
     id="destination"
-    placeholder="Hospital, Airport, Street name..."
-    required
+    placeholder="Hospital, airport, street name…"
+    oninput="searchDestination()"
   />
+  <div id="suggestions" class="suggestions"></div>
 
-  <!-- PICKUP TIME (OPTIONAL) -->
-  <label for="pickupTime">Pickup Time (optional)</label>
-  <input
-    type="time"
-    id="pickupTime"
-  />
+  <!-- PICKUP DATE -->
+  <label>Pickup Date (optional)</label>
+  <input type="date" id="pickupDate" />
+
+  <!-- PICKUP TIME -->
+  <label>Pickup Time (optional)</label>
+  <input type="time" id="pickupTime" />
 
   <button onclick="sendTaxiRequest()">📍 SHARE & REQUEST TAXI</button>
 
   <p class="note">
-    Your location is shared only after you press the button.
+    Location is shared only when you press the button.
   </p>
 
-  <script>
-    function sendTaxiRequest() {
-      const destination = document.getElementById("destination").value.trim();
-      const pickupTimeInput = document.getElementById("pickupTime").value;
+<script>
+  let selectedDestination = "";
 
-      // Destination is mandatory
-      if (!destination) {
-        alert("Please enter destination.");
-        return;
-      }
+  function searchDestination() {
+    const query = document.getElementById("destination").value;
+    if (query.length < 3) {
+      document.getElementById("suggestions").innerHTML = "";
+      return;
+    }
 
-      // Pickup time logic
-      const pickupTime = pickupTimeInput ? pickupTimeInput : "NOW (ASAP)";
+    fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${query}`)
+      .then(res => res.json())
+      .then(data => {
+        const suggestions = document.getElementById("suggestions");
+        suggestions.innerHTML = "";
 
-      if (!navigator.geolocation) {
-        alert("Location not supported on this device.");
-        return;
-      }
+        data.slice(0, 5).forEach(place => {
+          const div = document.createElement("div");
+          div.className = "suggestion-item";
+          div.innerText = place.display_name;
+          div.onclick = () => {
+            document.getElementById("destination").value = place.display_name;
+            selectedDestination = place.display_name;
+            suggestions.innerHTML = "";
+          };
+          suggestions.appendChild(div);
+        });
+      });
+  }
 
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          const lat = position.coords.latitude;
-          const lon = position.coords.longitude;
+  function sendTaxiRequest() {
+    const destination =
+      selectedDestination || document.getElementById("destination").value.trim();
 
-          const mapsLink = `https://maps.google.com/?q=${lat},${lon}`;
+    if (!destination) {
+      alert("Please enter destination.");
+      return;
+    }
 
-          // FINAL WHATSAPP MESSAGE
-          const message = encodeURIComponent(
+    const date = document.getElementById("pickupDate").value;
+    const time = document.getElementById("pickupTime").value;
+
+    let pickupText = "NOW (ASAP)";
+    if (date || time) {
+      pickupText = `${date || "Today"} ${time || ""}`.trim();
+    }
+
+    if (!navigator.geolocation) {
+      alert("Location not supported.");
+      return;
+    }
+
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        const lat = pos.coords.latitude;
+        const lon = pos.coords.longitude;
+        const mapsLink = `https://maps.google.com/?q=${lat},${lon}`;
+
+        const message = encodeURIComponent(
 `🚖 Taxi Request – Confirmation Needed
 
 📍 Pickup Location:
@@ -121,25 +167,19 @@ ${mapsLink}
 📍 Destination:
 ${destination}
 
-⏰ Pickup Time:
-${pickupTime}
+⏰ Pickup:
+${pickupText}
 
-👉 Please reply:
-CONFIRM / CHANGE TIME / CANCEL`
-          );
+👉 Reply: CONFIRM / CHANGE / CANCEL`
+        );
 
-          // 🔴 YOUR WHATSAPP NUMBER (with country code, no +)
-          const whatsappNumber = "917828893403";
-
-          const whatsappURL = `https://wa.me/${whatsappNumber}?text=${message}`;
-          window.location.href = whatsappURL;
-        },
-        () => {
-          alert("Unable to fetch location. Please try again.");
-        }
-      );
-    }
-  </script>
+        const whatsappNumber = "917828893403";
+        window.location.href = `https://wa.me/${whatsappNumber}?text=${message}`;
+      },
+      () => alert("Unable to fetch location.")
+    );
+  }
+</script>
 
 </body>
 </html>
