@@ -38,6 +38,15 @@
     button:active {
       background: #115e59;
     }
+    input {
+      font-size: 20px;
+      padding: 14px;
+      width: 90%;
+      max-width: 320px;
+      border-radius: 10px;
+      border: 1px solid #ccc;
+      margin-top: 15px;
+    }
     .note {
       margin-top: 25px;
       font-size: 14px;
@@ -53,12 +62,23 @@
 
   <button onclick="shareLocation()">📍 SHARE MY LOCATION</button>
 
+  <!-- Destination selection -->
   <div id="destinationBox" style="display:none; margin-top:30px;">
     <p>Where do you want to go?</p>
 
     <button onclick="sendWithDestination('Hospital')">🏥 Hospital</button><br><br>
     <button onclick="sendWithDestination('Home')">🏠 Home</button><br><br>
-    <button onclick="sendWithDestination('Airport')">✈️ Airport</button>
+    <button onclick="sendWithDestination('Airport')">✈️ Airport</button><br><br>
+
+    <button onclick="showOtherDestination()">📍 Other destination</button>
+  </div>
+
+  <!-- Other destination input -->
+  <div id="otherBox" style="display:none; margin-top:25px;">
+    <p>Please type the full address</p>
+    <input type="text" id="otherDestinationInput" placeholder="House no, street, area, city">
+    <br><br>
+    <button onclick="sendOtherDestination()">Send</button>
   </div>
 
   <p class="note">
@@ -95,9 +115,21 @@
       );
 
       const whatsappNumber = "917828893403"; // your number
-      const whatsappURL = `https://wa.me/${whatsappNumber}?text=${message}`;
+      window.location.href = `https://wa.me/${whatsappNumber}?text=${message}`;
+    }
 
-      window.location.href = whatsappURL;
+    function showOtherDestination() {
+      document.getElementById("otherBox").style.display = "block";
+    }
+
+    function sendOtherDestination() {
+      const destination = document.getElementById("otherDestinationInput").value.trim();
+      if (!destination) {
+        alert("Please enter the destination address.");
+        return;
+      }
+
+      sendWithDestination(destination);
     }
 
     if ('serviceWorker' in navigator) {
