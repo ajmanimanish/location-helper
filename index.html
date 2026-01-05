@@ -73,10 +73,14 @@
     <button onclick="showOtherDestination()">📍 Other destination</button>
   </div>
 
-  <!-- Other destination input -->
+  <!-- Google Autocomplete input -->
   <div id="otherBox" style="display:none; margin-top:25px;">
-    <p>Please type the full address</p>
-    <input type="text" id="otherDestinationInput" placeholder="House no, street, area, city">
+    <p>Type destination address</p>
+    <input
+      type="text"
+      id="destinationInput"
+      placeholder="House no, street, area, city"
+    >
     <br><br>
     <button onclick="sendOtherDestination()">Send</button>
   </div>
@@ -87,10 +91,11 @@
 
   <script>
     let currentMapsLink = "";
+    let selectedAddress = "";
 
     function shareLocation() {
       if (!navigator.geolocation) {
-        alert("Location not supported on this phone.");
+        alert("Location not supported.");
         return;
       }
 
@@ -98,14 +103,10 @@
         (position) => {
           const lat = position.coords.latitude;
           const lon = position.coords.longitude;
-
           currentMapsLink = `https://maps.google.com/?q=${lat},${lon}`;
-
           document.getElementById("destinationBox").style.display = "block";
         },
-        () => {
-          alert("Unable to get location. Please try again.");
-        }
+        () => alert("Unable to get location.")
       );
     }
 
@@ -114,7 +115,7 @@
         `Hello, I need help booking a taxi.\n\nPickup location:\n${currentMapsLink}\n\nDestination:\n${destination}`
       );
 
-      const whatsappNumber = "917828893403"; // your number
+      const whatsappNumber = "917828893403";
       window.location.href = `https://wa.me/${whatsappNumber}?text=${message}`;
     }
 
@@ -123,19 +124,40 @@
     }
 
     function sendOtherDestination() {
-      const destination = document.getElementById("otherDestinationInput").value.trim();
-      if (!destination) {
-        alert("Please enter the destination address.");
+      const input = document.getElementById("destinationInput").value.trim();
+      if (!input) {
+        alert("Please enter destination.");
         return;
       }
+      sendWithDestination(input);
+    }
 
-      sendWithDestination(destination);
+    // Google Places Autocomplete
+    function initAutocomplete() {
+      const input = document.getElementById("destinationInput");
+      const autocomplete = new google.maps.places.Autocomplete(input, {
+        types: ["geocode"],
+      });
+
+      autocomplete.addListener("place_changed", () => {
+        const place = autocomplete.getPlace();
+        if (place.formatted_address) {
+          input.value = place.formatted_address;
+        }
+      });
     }
 
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.register('service-worker.js');
     }
   </script>
+
+  <!-- Google Maps API -->
+  <script
+    src="https://maps.googleapis.com/maps/api/js?key=AIzaSyD6ZxieC6Q2sx963MS_voRTTJkZ1ooyeZU&libraries=places&callback=initAutocomplete"
+    async
+    defer
+  ></script>
 
 </body>
 </html>
