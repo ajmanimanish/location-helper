@@ -3,164 +3,143 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Help – Book My Taxi</title>
-
-  <link rel="manifest" href="manifest.json">
-  <meta name="theme-color" content="#0f766e">
+  <title>Taxi Help – Share Location</title>
 
   <style>
     body {
       font-family: Arial, sans-serif;
       background: #f0fdfa;
-      text-align: center;
-      padding: 30px 15px;
+      padding: 20px;
+      max-width: 480px;
+      margin: auto;
     }
 
     h1 {
       color: #065f46;
-      font-size: 26px;
+      text-align: center;
     }
 
-    p {
-      font-size: 18px;
-      color: #064e3b;
+    label {
+      font-weight: bold;
+      display: block;
+      margin-top: 15px;
+      margin-bottom: 5px;
+    }
+
+    input {
+      width: 100%;
+      padding: 12px;
+      font-size: 16px;
+      border-radius: 8px;
+      border: 1px solid #ccc;
     }
 
     button {
+      margin-top: 25px;
+      width: 100%;
       font-size: 20px;
-      padding: 18px 24px;
+      padding: 16px;
       background: #0f766e;
       color: white;
       border: none;
       border-radius: 12px;
       cursor: pointer;
-      margin-top: 15px;
-      width: 100%;
-      max-width: 400px;
     }
 
-    input {
-      font-size: 18px;
-      padding: 12px;
-      width: 100%;
-      max-width: 400px;
-      margin-top: 15px;
-    }
-
-    ul {
-      list-style: none;
-      padding: 0;
-      margin: 10px auto;
-      max-width: 400px;
-      text-align: left;
-      background: white;
-      border-radius: 8px;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
-    }
-
-    li {
-      padding: 10px;
-      border-bottom: 1px solid #eee;
-      cursor: pointer;
-      font-size: 16px;
-    }
-
-    li:hover {
-      background: #f0fdfa;
+    button:active {
+      background: #115e59;
     }
 
     .note {
+      margin-top: 15px;
       font-size: 14px;
-      margin-top: 20px;
       color: #555;
+      text-align: center;
     }
   </style>
 </head>
 
 <body>
-  <h1>Need a Taxi?</h1>
-  <p>We will help you book a taxi.</p>
 
+  <h1>🚖 Book a Taxi</h1>
+
+  <!-- DESTINATION (MANDATORY) -->
+  <label for="destination">Destination (required)</label>
   <input
-    id="destinationInput"
     type="text"
-    placeholder="Type destination (hospital, home, etc.)"
-    oninput="searchAddress()"
+    id="destination"
+    placeholder="Hospital, Airport, Street name..."
+    required
   />
 
-  <ul id="suggestions"></ul>
+  <!-- PICKUP TIME (OPTIONAL) -->
+  <label for="pickupTime">Pickup Time (optional)</label>
+  <input
+    type="time"
+    id="pickupTime"
+  />
 
-  <button onclick="shareLocation()">📍 SHARE MY LOCATION</button>
+  <button onclick="sendTaxiRequest()">📍 SHARE & REQUEST TAXI</button>
 
   <p class="note">
-    Location is shared only when you press the button.
+    Your location is shared only after you press the button.
   </p>
 
-<script>
-  let selectedDestination = "";
+  <script>
+    function sendTaxiRequest() {
+      const destination = document.getElementById("destination").value.trim();
+      const pickupTimeInput = document.getElementById("pickupTime").value;
 
-  async function searchAddress() {
-    const query = document.getElementById("destinationInput").value;
-    const suggestions = document.getElementById("suggestions");
-
-    if (query.length < 3) {
-      suggestions.innerHTML = "";
-      return;
-    }
-
-    const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&addressdetails=1&limit=5&countrycodes=in`;
-
-    const response = await fetch(url, {
-      headers: {
-        "Accept": "application/json"
+      // Destination is mandatory
+      if (!destination) {
+        alert("Please enter destination.");
+        return;
       }
-    });
 
-    const results = await response.json();
-    suggestions.innerHTML = "";
+      // Pickup time logic
+      const pickupTime = pickupTimeInput ? pickupTimeInput : "NOW (ASAP)";
 
-    results.forEach(place => {
-      const li = document.createElement("li");
-      li.textContent = place.display_name;
-      li.onclick = () => {
-        selectedDestination = place.display_name;
-        document.getElementById("destinationInput").value = place.display_name;
-        suggestions.innerHTML = "";
-      };
-      suggestions.appendChild(li);
-    });
-  }
-
-  function shareLocation() {
-    if (!navigator.geolocation) {
-      alert("Location not supported on this phone.");
-      return;
-    }
-
-    navigator.geolocation.getCurrentPosition(
-      (position) => {
-        const lat = position.coords.latitude;
-        const lon = position.coords.longitude;
-        const mapsLink = `https://maps.google.com/?q=${lat},${lon}`;
-
-        const message = encodeURIComponent(
-          `Hello, I need help booking a taxi.\n\n` +
-          `📍 My current location:\n${mapsLink}\n\n` +
-          `🎯 Destination:\n${selectedDestination || "Not specified"}`
-        );
-
-        const whatsappNumber = "917828893403"; // your number
-        window.location.href = `https://wa.me/${whatsappNumber}?text=${message}`;
-      },
-      () => {
-        alert("Unable to get location. Please try again.");
+      if (!navigator.geolocation) {
+        alert("Location not supported on this device.");
+        return;
       }
-    );
-  }
 
-  if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('service-worker.js');
-  }
-</script>
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          const lat = position.coords.latitude;
+          const lon = position.coords.longitude;
+
+          const mapsLink = `https://maps.google.com/?q=${lat},${lon}`;
+
+          // FINAL WHATSAPP MESSAGE
+          const message = encodeURIComponent(
+`🚖 Taxi Request – Confirmation Needed
+
+📍 Pickup Location:
+${mapsLink}
+
+📍 Destination:
+${destination}
+
+⏰ Pickup Time:
+${pickupTime}
+
+👉 Please reply:
+CONFIRM / CHANGE TIME / CANCEL`
+          );
+
+          // 🔴 YOUR WHATSAPP NUMBER (with country code, no +)
+          const whatsappNumber = "917828893403";
+
+          const whatsappURL = `https://wa.me/${whatsappNumber}?text=${message}`;
+          window.location.href = whatsappURL;
+        },
+        () => {
+          alert("Unable to fetch location. Please try again.");
+        }
+      );
+    }
+  </script>
+
 </body>
 </html>
